@@ -24,8 +24,8 @@ public class P01A04ApiController {
     private final List<Map<String, Object>> mockList = new ArrayList<>();
 
     public P01A04ApiController() {
-        // 더미 데이터
-        for (int i = 1; i <= 23; i++) {
+        // 더미 데이터 생성
+        for (int i = 1; i <= 100; i++) {
             Map<String, Object> item = new HashMap<>();
             item.put("id", i);
             item.put("title", "보고서 " + i);
@@ -44,8 +44,8 @@ public class P01A04ApiController {
             @RequestParam(defaultValue = "10") int size,
             @RequestParam(required = false) String search
     ) {
-        // 🔎 검색 필터
         List<Map<String, Object>> filtered = new ArrayList<>(mockList);
+
         if (search != null && !search.isEmpty()) {
             filtered.removeIf(row ->
                     !row.get("title").toString().contains(search) &&
@@ -53,7 +53,6 @@ public class P01A04ApiController {
             );
         }
 
-        // 📄 페이징 처리
         int start = page * size;
         int end = Math.min(start + size, filtered.size());
         List<Map<String, Object>> paged = filtered.subList(Math.min(start, end), end);
@@ -66,7 +65,24 @@ public class P01A04ApiController {
     }
 
     // ============================================================
-    // ➕ 등록 (POST /api/p01a04)
+    // 🔎 단건 조회 (상세 보기 - DB 조회한 것처럼)
+    // ============================================================
+    @GetMapping("/{id}")
+    public ResponseEntity<?> getDetail(@PathVariable int id) {
+        Optional<Map<String, Object>> found = mockList.stream()
+                .filter(m -> (int) m.get("id") == id)
+                .findFirst();
+
+        if (found.isPresent()) {
+            return ResponseEntity.ok(found.get());
+        } else {
+            return ResponseEntity.status(404)
+                    .body(Map.of("error", "해당 ID의 데이터가 존재하지 않습니다."));
+        }
+    }
+
+    // ============================================================
+    // ➕ 등록
     // ============================================================
     @PostMapping
     public Map<String, Object> addItem(@RequestBody Map<String, Object> request) {
@@ -83,7 +99,7 @@ public class P01A04ApiController {
     }
 
     // ============================================================
-    // ✏️ 수정 (PUT /api/p01a04/{id})
+    // ✏️ 수정
     // ============================================================
     @PutMapping("/{id}")
     public Map<String, Object> updateItem(@PathVariable int id, @RequestBody Map<String, Object> request) {
@@ -102,7 +118,7 @@ public class P01A04ApiController {
     }
 
     // ============================================================
-    // ❌ 삭제 (DELETE /api/p01a04)
+    // ❌ 삭제 (다중 삭제)
     // ============================================================
     @DeleteMapping
     public Map<String, Object> deleteItems(@RequestBody List<Integer> ids) {
@@ -111,13 +127,19 @@ public class P01A04ApiController {
     }
 
     // ============================================================
-    // 📊 엑셀 다운로드 (GET /api/p01a04/excel)
+    // 📊 엑셀 다운로드 (샘플 CSV 응답)
     // ============================================================
     @GetMapping("/excel")
     public ResponseEntity<byte[]> downloadExcel(@RequestParam(required = false) String search) {
-        // ⚙️ 실제 구현에서는 Apache POI 등으로 파일 생성
-        String dummy = "id,title,owner,regDate\n1,테스트,홍길동,2025-10-06\n";
-        byte[] bytes = dummy.getBytes();
+        StringBuilder csv = new StringBuilder("id,title,owner,regDate\n");
+        mockList.forEach(item -> csv.append(
+                item.get("id") + "," +
+                item.get("title") + "," +
+                item.get("owner") + "," +
+                item.get("regDate") + "\n"
+        ));
+
+        byte[] bytes = csv.toString().getBytes();
 
         return ResponseEntity.ok()
                 .header("Content-Disposition", "attachment; filename=p01a04_list.csv")

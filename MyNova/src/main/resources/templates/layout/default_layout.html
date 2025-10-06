@@ -2,104 +2,198 @@
 <html lang="ko" xmlns:th="http://www.thymeleaf.org"
       xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title th:text="${title} ?: 'MyNova'">MyNova Platform</title>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title th:text="${title} ?: 'MyNova'">MyNova</title>
 
-<!-- ✅ Font Awesome (공식 최신 안정버전 - 아이콘 100% 표시됨) -->
-<!-- 공통 아이콘 -->
+  <!-- ✅ Font Awesome -->
   <link rel="stylesheet"
         href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
 
-
   <style>
-    html, body {
-      height: 100%;
+    /* ✅ 전체 기본 레이아웃 */
+    body {
       margin: 0;
-      font-family: 'Noto Sans KR', sans-serif;
-      background-color: #f3f4f6;
-      color: #333;
+      font-family: "Segoe UI", Arial, sans-serif;
+      background: #f9fafb;
+      color: #111827;
+      display: flex;
+      flex-direction: column;
+      min-height: 100vh;
       overflow-x: hidden;
     }
 
-    body {
+    /* ✅ 상단바 */
+    header {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 50px;
+      background: #1e3a8a;
+      color: #fff;
       display: flex;
-      flex-direction: column;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 1rem;
+      z-index: 4000;
     }
 
+    header .left {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    header button {
+      background: none;
+      border: none;
+      color: #fff;
+      font-size: 1.3rem;
+      cursor: pointer;
+    }
+
+    header h1 {
+      font-size: 1rem;
+      margin: 0;
+    }
+
+    /* ✅ 메인 콘텐츠 */
     main {
       flex: 1;
-      margin-left: 230px;
-      padding: 90px 40px 40px 40px;
-      transition: margin-left 0.3s ease;
-      min-height: calc(100vh - 50px);
-      position: relative;
-      z-index: 0;
+      display: flex;
+      margin-top: 50px;
+      transition: all 0.3s ease;
     }
 
-    #left.collapsed ~ main {
-      margin-left: 60px;
+    .content {
+      flex: 1;
+      width: 100%;
+      background: #fff;
+      padding: 1.5rem;
+      min-height: calc(100vh - 100px);
+      transition: all 0.3s ease;
+    }
+
+    /* ✅ 푸터 */
+    footer {
+      background: #f3f4f6;
+      text-align: center;
+      padding: 0.8rem 0;
+      color: #6b7280;
+      font-size: 0.85rem;
+      border-top: 1px solid #e5e7eb;
+    }
+
+    /* ✅ 사이드바 */
+    .sidebar {
+      position: fixed;
+      top: 50px;
+      left: 0;
+      width: 240px;
+      height: calc(100% - 50px);
+      background: #f3f4f6;
+      border-right: 1px solid #d1d5db;
+      overflow-y: auto;
+      transform: translateX(-240px);
+      transition: transform 0.3s ease;
+      z-index: 5000; /* ✅ overlay보다 위로 */
+    }
+
+    .sidebar.open {
+      transform: translateX(0);
+    }
+
+    /* ✅ 오버레이 */
+    #sidebarOverlay {
+      position: fixed;
+      top: 50px;
+      left: 0;
+      width: 100%;
+      height: calc(100% - 50px);
+      background: rgba(0, 0, 0, 0.3);
+      opacity: 0;
+      visibility: hidden;
+      transition: opacity 0.3s ease;
+      z-index: 4000; /* ✅ 사이드바보다 아래 */
+    }
+
+    #sidebarOverlay.active {
+      opacity: 1;
+      visibility: visible;
     }
 
     @media (max-width: 768px) {
-      main {
-        margin-left: 0;
-        padding: 80px 20px 20px 20px;
+      .content {
+        padding: 1rem;
       }
-    }
-
-    .content-card {
-      background: #ffffff;
-      border-radius: 12px;
-      padding: 24px;
-      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
-      min-height: 70vh;
-    }
-
-    .content-card h2 {
-      margin-top: 0;
-      font-size: 1.4rem;
-      font-weight: 600;
-      color: #1f2937;
-    }
-
-    ::-webkit-scrollbar {
-      width: 8px;
-    }
-    ::-webkit-scrollbar-thumb {
-      background-color: rgba(0, 0, 0, 0.2);
-      border-radius: 10px;
-    }
-    ::-webkit-scrollbar-thumb:hover {
-      background-color: rgba(0, 0, 0, 0.3);
-    }
-
-    header.top-bar {
-      position: fixed;
-      z-index: 2000 !important;
-    }
-
-    #left {
-      z-index: 1500 !important;
     }
   </style>
 </head>
 
 <body>
-  <div th:replace="~{fragments/top :: topFragment}"></div>
-  <div th:replace="~{fragments/left :: leftFragment}" id="left"></div>
 
-  <th:block layout:fragment="pageScript"></th:block>
+<!-- ✅ 상단바 -->
+<header th:replace="~{fragments/top :: topFragment}"></header>
 
-  <main>
-    <section layout:fragment="content">
-      <div class="content-card">
-        <h2>메인 콘텐츠 영역</h2>
-        <p>상단 토글 / 메뉴 / 세션 타이머 모두 정상 작동 중입니다 🎯</p>
-      </div>
-    </section>
-  </main>
+<!-- ✅ 오버레이 (사이드바 뒤 X, 아래 O) -->
+<div id="sidebarOverlay"></div>
 
-  <div th:replace="~{fragments/bottom :: bottomFragment}"></div>
+<!-- ✅ 사이드바 -->
+<div th:replace="~{fragments/left :: leftFragment}"></div>
+
+<!-- ✅ 메인 콘텐츠 -->
+<main>
+  <div class="content" layout:fragment="content">
+    <!-- 페이지 본문 -->
+  </div>
+</main>
+
+<!-- ✅ 하단 -->
+<footer>
+  © 2025 MyNova. All rights reserved.
+</footer>
+
+<!-- ✅ 공통 스크립트 -->
+<script>
+  document.addEventListener("DOMContentLoaded", () => {
+    const sidebar = document.querySelector(".sidebar");
+    const overlay = document.getElementById("sidebarOverlay");
+
+    // ✅ 항상 닫힌 상태로 시작
+    sidebar.classList.remove("open");
+    overlay.classList.remove("active");
+
+    // ✅ 전역 토글 함수 (top.html에서 호출)
+    window.toggleSidebar = function() {
+      const isOpen = sidebar.classList.contains("open");
+      if (isOpen) {
+        sidebar.classList.remove("open");
+        overlay.classList.remove("active");
+      } else {
+        sidebar.classList.add("open");
+        overlay.classList.add("active");
+      }
+    };
+
+    // ✅ 오버레이 클릭 시 닫기
+    overlay.addEventListener("click", () => {
+      sidebar.classList.remove("open");
+      overlay.classList.remove("active");
+    });
+
+    // ✅ 메뉴 클릭 시 닫기
+    document.addEventListener("click", (e) => {
+      if (e.target.closest(".sidebar a[href]")) {
+        sidebar.classList.remove("open");
+        overlay.classList.remove("active");
+      }
+    });
+  });
+</script>
+
+<!-- ✅ 페이지별 스크립트 -->
+<th:block layout:fragment="pageScript"></th:block>
+
 </body>
 </html>

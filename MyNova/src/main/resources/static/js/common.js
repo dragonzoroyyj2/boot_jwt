@@ -19,7 +19,7 @@ function makeHeaders() {
 }
 
 // ✅ 공통 Ajax 함수
-function fnInsert(url, data, callback) {
+/*function fnInsert(url, data, callback) {
     fetch(url, {
         method: "POST",
         headers: makeHeaders(),
@@ -59,4 +59,4 @@ function fnDelete(url, ids, callback) {
         })
         .then(callback)
         .catch(err => showToast(err.message, "error"));
-}
+}*/

@@ -2,49 +2,43 @@
 <div th:fragment="topFragment">
   <header class="top-bar">
     <div class="left-section">
-      <!-- ☰ 토글버튼 -->
       <button id="menuToggle" title="메뉴 열기/닫기">
-        <i class="fa-solid fa-bars"></i>
+        <i class="fas fa-bars"></i>
       </button>
       <h1>MyNova</h1>
     </div>
 
     <div class="right-section">
-      <!-- ⏱ 세션 타이머 -->
       <div class="session-box">
-        <i class="fa-solid fa-clock"></i>
+        <i class="fas fa-clock"></i>
         <span id="sessionTimer" class="session-time">--:--</span>
       </div>
 
-      <!-- 🔁 세션 연장 -->
       <button id="refreshSessionBtn" title="세션 연장">
-        <i class="fa-solid fa-rotate-right"></i>
+        <i class="fas fa-rotate-right"></i>
       </button>
 
-      <!-- 🚪 로그아웃 -->
       <button id="logoutBtn" title="로그아웃" class="logout-btn">
-        <i class="fa-solid fa-right-from-bracket"></i>
+        <i class="fas fa-right-from-bracket"></i>
       </button>
     </div>
   </header>
 
   <style>
-    /* ===== 상단바 전체 ===== */
     .top-bar {
       position: fixed;
       top: 0;
       left: 0;
       width: 100%;
       height: 50px;
-      background: #f3f4f6; /* 밝은 회색 */
-      color: #111827;
+      background: #f3f4f6;
+      border-bottom: 1px solid #d1d5db;
       display: flex;
       align-items: center;
       justify-content: space-between;
       padding: 0 1rem;
-      border-bottom: 1px solid #d1d5db;
-      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
-      z-index: 2000;
+      color: #1f2937;
+      z-index: 4000;
     }
 
     .left-section {
@@ -53,45 +47,37 @@
       gap: 10px;
     }
 
-    .left-section h1 {
+    .top-bar h1 {
       font-size: 1.1rem;
       font-weight: 600;
-      color: #1f2937;
       margin: 0;
+      color: #1f2937;
     }
 
     .right-section {
       display: flex;
       align-items: center;
-      gap: 14px;
-      margin-right: 12px;
+      gap: 12px;
+      margin-right: 10px;
     }
 
-    /* 시계 및 세션 타이머 박스 */
     .session-box {
       display: flex;
       align-items: center;
       gap: 6px;
       background: #e5e7eb;
-      padding: 3px 10px;
+      padding: 3px 8px;
       border-radius: 6px;
       font-size: 0.85rem;
-      color: #374151;
     }
 
-    .session-time {
-      font-weight: 500;
-      color: #111827;
-    }
-
-    /* 버튼 공통 */
     .top-bar button {
       background: none;
       border: none;
       color: #374151;
       font-size: 1.1rem;
       cursor: pointer;
-      transition: color 0.2s ease, transform 0.15s ease;
+      transition: color 0.2s ease, transform 0.2s ease;
     }
 
     .top-bar button:hover {
@@ -100,15 +86,20 @@
     }
 
     .logout-btn {
-      margin-right: 6px;
+      margin-right: 8px;
     }
 
     @media (max-width: 768px) {
+      .top-bar {
+        height: 48px;
+        padding: 0 0.6rem;
+      }
       .top-bar h1 {
         font-size: 1rem;
       }
-      .right-section {
-        gap: 10px;
+      .session-box {
+        font-size: 0.75rem;
+        padding: 2px 6px;
       }
     }
   </style>
@@ -120,7 +111,7 @@
       const logoutBtn = document.getElementById("logoutBtn");
       const timerEl = document.getElementById("sessionTimer");
 
-      // ✅ 토글 버튼 (항상 열고 닫기 가능)
+      // ✅ 사이드바 토글
       toggleBtn.addEventListener("click", () => {
         if (typeof window.toggleSidebar === "function") {
           window.toggleSidebar();
@@ -132,45 +123,46 @@
       let serverTime = parseInt(localStorage.getItem("serverTime"));
       if (!sessionMillis || !serverTime) {
         timerEl.textContent = "--:--";
-        return;
+      } else {
+        const drift = Date.now() - serverTime;
+        const updateTimer = () => {
+          const remaining = sessionMillis - (Date.now() - drift);
+          if (remaining <= 0) {
+            timerEl.textContent = "만료";
+            localStorage.clear();
+            window.location.href = "/login";
+            return;
+          }
+          const min = Math.floor(remaining / 60000);
+          const sec = Math.floor((remaining % 60000) / 1000);
+          timerEl.textContent = `${String(min).padStart(2, "0")}:${String(sec).padStart(2, "0")}`;
+        };
+        updateTimer();
+        setInterval(updateTimer, 1000);
       }
-
-      const drift = Date.now() - serverTime;
-      const updateTimer = () => {
-        const remaining = sessionMillis - (Date.now() - drift);
-        if (remaining <= 0) {
-          timerEl.textContent = "만료";
-          localStorage.removeItem("token");
-          window.location.href = "/login";
-          return;
-        }
-        const min = Math.floor(remaining / 60000);
-        const sec = Math.floor((remaining % 60000) / 1000);
-        timerEl.textContent = `${String(min).padStart(2, "0")}:${String(sec).padStart(2, "0")}`;
-      };
-      updateTimer();
-      setInterval(updateTimer, 1000);
 
       // ✅ 세션 연장
       refreshBtn.addEventListener("click", async () => {
         const token = localStorage.getItem("token");
         if (!token) return alert("세션 정보가 없습니다.");
-
-        const res = await fetch("/auth/refresh", {
-          method: "POST",
-          headers: { Authorization: "Bearer " + token },
-        });
-
-        if (res.ok) {
-          const data = await res.json();
-          localStorage.setItem("token", data.token);
-          localStorage.setItem("sessionMillis", data.sessionMillis);
-          localStorage.setItem("serverTime", data.serverTime);
-          alert("세션이 연장되었습니다 ✅");
-          location.reload();
-        } else {
-          alert("세션 연장 실패 ❌ 다시 로그인해주세요.");
-          window.location.href = "/login";
+        try {
+          const res = await fetch("/auth/refresh", {
+            method: "POST",
+            headers: { Authorization: "Bearer " + token },
+          });
+          if (res.ok) {
+            const data = await res.json();
+            localStorage.setItem("token", data.token);
+            localStorage.setItem("sessionMillis", data.sessionMillis);
+            localStorage.setItem("serverTime", data.serverTime);
+            alert("세션이 연장되었습니다 ✅");
+            location.reload();
+          } else {
+            alert("세션 연장 실패 ❌ 다시 로그인해주세요.");
+            window.location.href = "/login";
+          }
+        } catch (err) {
+          alert("세션 연장 중 오류 발생 ❌");
         }
       });
 

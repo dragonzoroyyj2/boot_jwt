@@ -7,48 +7,171 @@
 <head>
   <meta charset="UTF-8">
   <title>P01A04 서버 리스트</title>
+
+  <!-- ✅ Font Awesome 아이콘 -->
+  <link rel="stylesheet"
+        href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+
   <style>
-    body { font-family: "Segoe UI", Arial, sans-serif; font-size: 0.95rem; }
-    h2 { margin-bottom: 1rem; }
+    body {
+      font-family: "Segoe UI", Arial, sans-serif;
+      font-size: 0.95rem;
+      margin: 0;
+      background: #f9fafb;
+    }
 
+    h2 {
+      margin-bottom: 1rem;
+      font-size: 1.3rem;
+      color: #111827;
+    }
+
+    /* ✅ 메인 컨테이너 */
+    .content-container {
+      width: 100%;
+      max-width: 1600px;
+      margin: 0 auto;
+      padding: 1rem 2%;
+      box-sizing: border-box;
+    }
+
+    /* ✅ 툴바 */
     .toolbar {
-      display:flex; justify-content:space-between; align-items:center;
-      gap:0.5rem; margin-bottom:1rem;
+      display: flex;
+      justify-content: flex-start;
+      align-items: center;
+      flex-wrap: nowrap;
+      gap: 8px;
+      margin-bottom: 0.5rem;
+      overflow-x: auto;
+      padding: 4px 0;
     }
+
+    .toolbar::-webkit-scrollbar {
+      display: none;
+    }
+
     .toolbar input {
-      padding:0.4rem; border:1px solid #ccc; border-radius:4px;
+      padding: 0.4rem 0.6rem;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+      width: 130px;
+      outline: none;
+      font-size: 0.9rem;
+      transition: border-color 0.3s;
+      flex-shrink: 0;
     }
+
+    .toolbar input:focus {
+      border-color: #2563eb;
+    }
+
+    /* ✅ 총 건수 */
+    .list-info {
+      margin-bottom: 0.5rem;
+      color: #4b5563;
+      font-size: 0.9rem;
+      display: flex;
+      align-items: center;
+    }
+
+    /* ✅ 버튼 */
     .btn {
-      background:#2563eb; color:white; border:none; border-radius:4px;
-      padding:0.45rem 0.9rem; cursor:pointer; font-size:0.9rem;
+      background: #2563eb;
+      color: white;
+      border: none;
+      border-radius: 6px;
+      padding: 0.45rem 0.7rem;
+      cursor: pointer;
+      font-size: 1rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: background 0.2s;
+      min-width: 38px;
+      height: 38px;
+      flex-shrink: 0;
     }
-    .btn:hover { background:#1e40af; }
-    .btn.red { background:#dc2626; }
-    .btn.gray { background:#6b7280; }
 
-    table { width:100%; border-collapse:collapse; }
+    .btn:hover { background: #1e40af; }
+    .btn.red { background: #dc2626; }
+    .btn.red:hover { background: #b91c1c; }
+    .btn.gray { background: #6b7280; }
+    .btn i { pointer-events: none; }
+
+    /* ✅ 테이블 */
+    .table-container {
+      width: 100%;
+      background: white;
+      border-radius: 8px;
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      background: white;
+    }
+
     th, td {
-      border:1px solid #ddd; padding:8px; text-align:center;
+      border: 1px solid #e5e7eb;
+      padding: 10px;
+      text-align: center;
+      white-space: nowrap;
     }
-    th { background:#f3f4f6; }
-    td a { color:#2563eb; cursor:pointer; text-decoration:underline; }
 
+    th { background: #f3f4f6; font-weight: 600; }
+    td a { color: #2563eb; cursor: pointer; text-decoration: underline; }
+
+    /* ✅ 페이징 (한 줄 고정 + 반응형) */
     .pagination {
-      display:flex; justify-content:center; margin-top:1rem; gap:4px;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      margin-top: 1rem;
+      gap: 5px;
+      flex-wrap: nowrap; /* 🔥 줄바꿈 방지 */
+      overflow-x: auto; /* 🔥 작을 때 가로 스크롤 */
+      width: fit-content;
+      max-width: 80%;
+      margin-left: auto;
+      margin-right: auto;
+      padding: 6px 8px;
+      scrollbar-width: thin;
     }
+
+    .pagination::-webkit-scrollbar {
+      height: 5px;
+    }
+
+    .pagination::-webkit-scrollbar-thumb {
+      background: #d1d5db;
+      border-radius: 4px;
+    }
+
     .pagination button {
       border: 1px solid #ccc;
-      padding: 5px 10px;
-      margin: 0 2px;
+      padding: 5px 9px;
       cursor: pointer;
       border-radius: 4px;
       background-color: white;
+      transition: all 0.2s;
+      min-width: 32px;
+      height: 32px;
+      flex-shrink: 0;
+      font-size: 0.85rem;
     }
+
+    .pagination button:hover {
+      background-color: #f3f4f6;
+    }
+
     .pagination button.active {
       background-color: #2563eb;
       color: white;
       border-color: #2563eb;
     }
+
     .pagination button:disabled {
       opacity: 0.5;
       cursor: not-allowed;
@@ -56,57 +179,108 @@
 
     /* ✅ 모달 */
     .modal {
-      display:none; position:fixed; z-index:3000; left:0; top:0;
-      width:100%; height:100%; background:rgba(0,0,0,0.5);
+      display: none;
+      position: fixed;
+      z-index: 3000;
+      left: 0;
+      top: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0, 0, 0, 0.5);
     }
+
     .modal-content {
-      background:white; width:90%; max-width:450px; padding:1rem;
-      border-radius:0.5rem; position:absolute; top:50%; left:50%;
-      transform:translate(-50%, -50%);
+      background: white;
+      width: 90%;
+      max-width: 450px;
+      padding: 1rem;
+      border-radius: 0.5rem;
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
     }
-    .modal-header { display:flex; justify-content:space-between; align-items:center; }
-    .modal-header h3 { margin:0; }
-    .form-group { margin:0.5rem 0; text-align:left; }
-    .form-group label { display:block; font-size:0.85rem; margin-bottom:0.25rem; }
+
+    .modal-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .modal-header h3 { margin: 0; }
+
+    .form-group { margin: 0.5rem 0; text-align: left; }
+    .form-group label { display: block; font-size: 0.85rem; margin-bottom: 0.25rem; }
     .form-group input {
-      width:100%; padding:0.4rem; border:1px solid #ccc; border-radius:4px;
+      width: 100%;
+      padding: 0.4rem;
+      border: 1px solid #ccc;
+      border-radius: 4px;
     }
-    .modal-footer { display:flex; justify-content:flex-end; gap:0.5rem; }
+
+    .modal-footer {
+      display: flex;
+      justify-content: flex-end;
+      gap: 0.5rem;
+    }
+
+    /* ✅ 반응형 */
+    @media (max-width: 768px) {
+      .content-container { padding: 1rem; }
+      .toolbar input { width: 110px; }
+      .btn { min-width: 34px; height: 34px; font-size: 0.85rem; }
+      .pagination {
+        gap: 3px;
+        max-width: 95%;
+      }
+      .pagination button {
+        padding: 4px 7px;
+        font-size: 0.8rem;
+        height: 28px;
+        min-width: 26px;
+      }
+    }
   </style>
 </head>
 
 <body>
 <div layout:fragment="content">
-  <h2>P01A04 서버 리스트</h2>
+  <div class="content-container">
+    <h2>P01A04 서버 리스트</h2>
 
-  <!-- 🔍 검색 / 액션 -->
-  <div class="toolbar">
-    <div>
-      <input type="text" id="searchInput" placeholder="검색어 입력" />
-      <button id="searchBtn" class="btn">검색</button>
-      <button id="deleteSelectedBtn" class="btn red">삭제</button>
+    <!-- 🔍 검색 / 액션 -->
+    <div class="toolbar">
+      <input type="text" id="searchInput" placeholder="검색" />
+      <button id="searchBtn" class="btn" title="검색"><i class="fas fa-search"></i></button>
+      <button id="deleteSelectedBtn" class="btn red" title="삭제"><i class="fas fa-trash"></i></button>
+      <button id="excelBtn" class="btn" title="엑셀 다운로드"><i class="fas fa-file-excel"></i></button>
+      <button id="addBtn" class="btn" title="추가"><i class="fas fa-plus"></i></button>
     </div>
-    <div>
-      <button id="excelBtn" class="btn">엑셀 다운로드</button>
-      <button id="addBtn" class="btn">추가</button>
+
+    <!-- ✅ 총 건수 -->
+    <div class="list-info">
+      <span id="totalCount">총 0건</span>
     </div>
+
+    <!-- 📋 데이터 테이블 -->
+    <div class="table-container">
+      <table>
+        <thead>
+          <tr>
+            <th><input type="checkbox" id="checkAll" /></th>
+            <th>No</th>
+            <th>제목</th>
+            <th>담당자</th>
+            <th>등록일</th>
+          </tr>
+        </thead>
+        <tbody id="dataTable"></tbody>
+      </table>
+    </div>
+
+    <!-- ✅ 페이징 -->
+    <div id="pagination" class="pagination"></div>
   </div>
-
-  <!-- 📋 데이터 테이블 -->
-  <table>
-    <thead>
-      <tr>
-        <th><input type="checkbox" id="checkAll" /></th>
-        <th>No</th>
-        <th>제목</th>
-        <th>담당자</th>
-        <th>등록일</th>
-      </tr>
-    </thead>
-    <tbody id="dataTable"></tbody>
-  </table>
-
-  <div id="pagination" class="pagination"></div>
 
   <!-- ➕ 등록 모달 -->
   <div id="addModal" class="modal">
@@ -167,8 +341,8 @@
   <script>
     document.addEventListener("DOMContentLoaded", () => {
       initUnifiedList({
-        mode: "p01a04",              // 서버 구분
-        apiUrl: "/api/p01a04",       // REST 엔드포인트
+        mode: "p01a04",
+        apiUrl: "/api/p01a04",
         tableBodySelector: "#dataTable",
         paginationSelector: "#pagination",
         searchInputSelector: "#searchInput",
@@ -194,6 +368,16 @@
           { key: "owner", label: "담당자" },
           { key: "regDate", label: "등록일" }
         ]
+      });
+
+      // ✅ Enter로 검색
+      document.getElementById("searchInput").addEventListener("keydown", e => {
+        if (e.key === "Enter") document.getElementById("searchBtn").click();
+      });
+
+      // ✅ 총 건수 업데이트
+      document.addEventListener("totalCountUpdated", e => {
+        document.getElementById("totalCount").textContent = `총 ${e.detail.count}건`;
       });
     });
   </script>

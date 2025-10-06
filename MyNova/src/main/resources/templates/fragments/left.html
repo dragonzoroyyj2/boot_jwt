@@ -1,12 +1,12 @@
 <!-- fragments/left.html -->
 <div th:fragment="leftFragment">
-  <!-- ✅ 사이드바를 먼저 선언 -->
-  <nav id="left" class="sidebar">
+  <!-- ✅ 사이드바 -->
+  <nav id="left" class="sidebar closed">
     <ul>
       <li><a href="/pages/main/base"><i class="fas fa-home"></i><span>홈</span></a></li>
 
       <li class="has-submenu">
-        <a href="#"><i class="fas fa-file-alt"></i><span>리포트 관리</span></a>
+        <a href="#" class="submenu-toggle"><i class="fas fa-file-alt"></i><span>리포트 관리</span></a>
         <ul class="submenu">
           <li><a href="/pages/p01/p01a04/p01a04List">리포트 목록</a></li>
           <li><a href="#">리포트 통계</a></li>
@@ -14,7 +14,7 @@
       </li>
 
       <li class="has-submenu">
-        <a href="#"><i class="fas fa-cog"></i><span>설정</span></a>
+        <a href="#" class="submenu-toggle"><i class="fas fa-cog"></i><span>설정</span></a>
         <ul class="submenu">
           <li><a href="#">사용자 관리</a></li>
           <li><a href="#">권한 설정</a></li>
@@ -23,7 +23,7 @@
     </ul>
   </nav>
 
-  <!-- ✅ 오버레이는 뒤에 위치 -->
+  <!-- ✅ 오버레이 -->
   <div id="sidebarOverlay"></div>
 
   <style>
@@ -34,20 +34,20 @@
       left: 0;
       width: 240px;
       height: calc(100% - 50px);
-      background: #f3f4f6; /* 회색 배경 */
+      background: #f3f4f6;
       border-right: 1px solid #d1d5db;
       color: #374151;
       overflow-y: auto;
-      transform: translateX(0);
-      transition: transform 0.3s ease;
-      z-index: 2000; /* ✅ 메뉴가 항상 최상단 */
-    }
-
-    .sidebar.closed {
       transform: translateX(-240px);
+      transition: transform 0.3s ease;
+      z-index: 3000;
     }
 
-    /* ===== 오버레이 (배경) ===== */
+    .sidebar.open {
+      transform: translateX(0);
+    }
+
+    /* ===== 오버레이 ===== */
     #sidebarOverlay {
       display: none;
       position: fixed;
@@ -56,7 +56,7 @@
       width: 100%;
       height: 100%;
       background: rgba(0, 0, 0, 0.35);
-      z-index: 1999; /* ✅ 메뉴보다 아래 */
+      z-index: 2500;
       opacity: 0;
       transition: opacity 0.3s ease;
     }
@@ -66,7 +66,7 @@
       opacity: 1;
     }
 
-    /* ===== 메뉴 아이템 ===== */
+    /* ===== 메뉴 ===== */
     .sidebar ul {
       list-style: none;
       margin: 0;
@@ -115,30 +115,39 @@
       const sidebar = document.querySelector(".sidebar");
       const overlay = document.getElementById("sidebarOverlay");
 
-      // ✅ 전역 함수 (top.html에서 호출)
+      // ✅ 전역 토글 함수 (top.html에서 호출)
       window.toggleSidebar = function () {
-        const isClosed = sidebar.classList.contains("closed");
-
-        if (isClosed) {
-          sidebar.classList.remove("closed");
-          overlay.classList.add("active");
-        } else {
-          sidebar.classList.add("closed");
+        const isOpen = sidebar.classList.contains("open");
+        if (isOpen) {
+          sidebar.classList.remove("open");
           overlay.classList.remove("active");
+        } else {
+          sidebar.classList.add("open");
+          overlay.classList.add("active");
         }
       };
 
-      // ✅ 배경 클릭 시 닫기
+      // ✅ 오버레이 클릭 시 닫기
       overlay.addEventListener("click", () => {
-        sidebar.classList.add("closed");
+        sidebar.classList.remove("open");
         overlay.classList.remove("active");
       });
 
-      // ✅ 하위 메뉴 토글
-      document.querySelectorAll(".has-submenu > a").forEach(link => {
+      // ✅ 하위 메뉴 토글 (사이드바 닫기 방지)
+      document.querySelectorAll(".submenu-toggle").forEach(link => {
         link.addEventListener("click", e => {
           e.preventDefault();
-          link.parentElement.classList.toggle("open");
+          e.stopPropagation(); // 🔥 클릭 이벤트가 토글이나 오버레이로 전달되지 않게 차단
+          const parent = link.parentElement;
+          parent.classList.toggle("open");
+        });
+      });
+
+      // ✅ 하위 메뉴의 실제 링크 클릭 시 사이드바 닫기
+      document.querySelectorAll(".submenu a").forEach(item => {
+        item.addEventListener("click", () => {
+          sidebar.classList.remove("open");
+          overlay.classList.remove("active");
         });
       });
     });

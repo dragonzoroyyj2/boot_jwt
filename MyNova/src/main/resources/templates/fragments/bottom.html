@@ -1,26 +1,7 @@
-<th:block th:fragment="bottomFragment">
-  <footer class="bottom-bar">
-    <span>© 2025 MyNova Platform</span>
-    <span>Powered by Spring Boot + Thymeleaf</span>
+<!-- fragments/bottom.html -->
+<div th:fragment="bottomFragment">
+  <footer>
+    <i class="fas fa-leaf"></i>
+    <span>© 2025 MyNova Platform — All rights reserved.</span>
   </footer>
-
-  <style>
-    .bottom-bar {
-      position: fixed;
-      bottom: 0;
-      left: 0; right: 0;
-      height: 40px;
-      background: #1e3a8a;
-      color: #fff;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      padding: 0 1rem;
-      font-size: 0.85rem;
-      z-index: 1000;
-    }
-    @media (max-width: 768px) {
-      .bottom-bar { font-size: 0.75rem; padding: 0 0.5rem; }
-    }
-  </style>
-</th:block>
+</div>

@@ -3,60 +3,138 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>로그인</title>
+  <title>MyNova 로그인</title>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
+
   <style>
+    /* ✅ 전체 배경: 블루 → 보라 그라데이션 */
     body {
+      margin: 0;
+      height: 100vh;
       display: flex;
       justify-content: center;
       align-items: center;
-      height: 100vh;
-      background: #1e3a8a;
-      color: #fff;
-      margin: 0;
-      font-family: "Noto Sans KR", sans-serif;
+      font-family: "Pretendard", "Noto Sans KR", sans-serif;
+      background: linear-gradient(135deg, #3b82f6, #9333ea);
     }
-    .login-box {
-      background: #ffffff10;
-      padding: 2rem;
-      border-radius: 12px;
+
+    /* ✅ 로그인 카드 */
+    .login-container {
       width: 320px;
-      box-shadow: 0 4px 10px rgba(0,0,0,0.3);
-      backdrop-filter: blur(10px);
-    }
-    .login-box h2 {
+      padding: 2rem;
+      background: rgba(255, 255, 255, 0.15);
+      border-radius: 16px;
+      box-shadow: 0 8px 25px rgba(0, 0, 0, 0.2);
+      backdrop-filter: blur(12px);
       text-align: center;
-      margin-bottom: 1.5rem;
+      color: #fff;
+      animation: fadeIn 0.9s ease;
     }
-    .login-box input {
-      width: 100%;
-      padding: 10px;
+
+    .login-container h2 {
+      margin-bottom: 1.2rem;
+      font-weight: 700;
+      font-size: 1.3rem;
+      letter-spacing: 0.5px;
+    }
+
+    /* ✅ 인풋 필드 */
+    .input-group {
+      position: relative;
       margin-bottom: 1rem;
-      border: none;
-      border-radius: 8px;
     }
-    .login-box button {
-      width: 100%;
+
+    .input-group input {
+      width: 85%;
+      padding: 10px 35px 10px 12px;
+      border: none;
+      border-radius: 10px;
+      outline: none;
+      background: rgba(255, 255, 255, 0.9);
+      color: #333;
+      font-size: 0.9rem;
+      transition: all 0.25s ease;
+    }
+
+    .input-group input:focus {
+      background: #fff;
+      box-shadow: 0 0 0 2px #60a5fa;
+    }
+
+    .input-group i {
+      position: absolute;
+      right: 18px;
+      top: 50%;
+      transform: translateY(-50%);
+      color: #666;
+      font-size: 0.9rem;
+    }
+
+    /* ✅ 버튼 */
+    button {
+      width: 85%;
       padding: 10px;
-      background: #2563eb;
       border: none;
-      border-radius: 8px;
+      border-radius: 10px;
+      background: linear-gradient(90deg, #2563eb, #7c3aed);
       color: white;
-      cursor: pointer;
       font-weight: bold;
-      transition: 0.2s;
+      cursor: pointer;
+      transition: 0.3s;
+      font-size: 0.95rem;
+      margin-top: 0.5rem;
     }
-    .login-box button:hover {
-      background: #1d4ed8;
+
+    button:hover {
+      background: linear-gradient(90deg, #1d4ed8, #6d28d9);
+      transform: translateY(-2px);
+    }
+
+    /* ✅ 하단 텍스트 */
+    .login-footer {
+      margin-top: 1rem;
+      font-size: 0.8rem;
+      color: #e5e7eb;
+    }
+
+    /* ✅ 애니메이션 */
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(15px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    /* ✅ 반응형 */
+    @media (max-width: 400px) {
+      .login-container {
+        width: 90%;
+        padding: 1.8rem 1.2rem;
+      }
+      .input-group input, button {
+        width: 90%;
+      }
     }
   </style>
 </head>
+
 <body>
-  <div class="login-box">
-    <h2>MyNova 로그인</h2>
-    <input type="text" id="username" placeholder="아이디" />
-    <input type="password" id="password" placeholder="비밀번호" />
+  <div class="login-container">
+    <h2>🔐 MyNova 로그인</h2>
+
+    <div class="input-group">
+      <input type="text" id="username" placeholder="아이디" />
+      <i class="fas fa-user"></i>
+    </div>
+
+    <div class="input-group">
+      <input type="password" id="password" placeholder="비밀번호" />
+      <i class="fas fa-lock"></i>
+    </div>
+
     <button id="loginBtn">로그인</button>
+
+    <div class="login-footer">
+      <p>계정이 없나요? <a href="#" style="color:#93c5fd;">회원가입</a></p>
+    </div>
   </div>
 
   <script>
@@ -69,22 +147,26 @@
         return;
       }
 
-      const res = await fetch("/auth/login", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ username, password })
-      });
+      try {
+        const res = await fetch("/auth/login", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ username, password })
+        });
 
-      if (res.ok) {
-        const data = await res.json();
-        localStorage.setItem("token", data.token);
-        localStorage.setItem("username", data.username);
-        localStorage.setItem("sessionMillis", data.sessionMillis);
-        localStorage.setItem("serverTime", data.serverTime); // ✅ 추가
-        alert("로그인 성공 ✅");
-        location.href = "/pages/main/base";
-      } else {
-        alert("로그인 실패 ❌");
+        if (res.ok) {
+          const data = await res.json();
+          localStorage.setItem("token", data.token);
+          localStorage.setItem("username", data.username);
+          localStorage.setItem("sessionMillis", data.sessionMillis);
+          localStorage.setItem("serverTime", data.serverTime);
+          location.href = "/pages/main/base";
+        } else {
+          alert("로그인 실패 ❌");
+        }
+      } catch (err) {
+        console.error(err);
+        alert("서버 오류가 발생했습니다.");
       }
     });
   </script>
