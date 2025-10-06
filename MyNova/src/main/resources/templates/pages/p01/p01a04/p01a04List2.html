@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html lang="ko"
+      xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{layout/default_layout}">
+<head>
+    <meta charset="UTF-8">
+    <title>P01A05 서버 리스트</title>
+
+    <style>
+        /* =============================
+           📘 P01A05 전용 디자인 (독립형)
+           ============================= */
+        body { font-family: "Segoe UI", "Malgun Gothic", sans-serif; font-size: 0.95rem; }
+        h2 { font-size: 1.2rem; margin-bottom: 1rem; color:#222; }
+
+        .list-container {
+            background: #fff; border-radius:10px;
+            padding: 20px; box-shadow:0 2px 6px rgba(0,0,0,0.1);
+            max-width:1100px; margin:0 auto;
+        }
+
+        /* 검색바 */
+        .toolbar { display:flex; gap:10px; margin-bottom:12px; }
+        .toolbar input {
+            flex:1; padding:8px; border:1px solid #ccc; border-radius:6px;
+        }
+        .toolbar button {
+            background:#2563eb; color:#fff; border:none;
+            padding:8px 12px; border-radius:6px; cursor:pointer;
+        }
+        .toolbar button:hover { background:#1e40af; }
+
+        /* 액션버튼 */
+        .actions { display:flex; gap:8px; margin-bottom:10px; }
+        .actions button {
+            border:none; padding:8px 12px; border-radius:6px; color:#fff; cursor:pointer;
+        }
+        #addBtn { background:#2563eb; }
+        #deleteSelectedBtn { background:#dc2626; }
+        #excelBtn { background:#059669; }
+        #addBtn:hover { background:#1e40af; }
+        #deleteSelectedBtn:hover { background:#991b1b; }
+        #excelBtn:hover { background:#047857; }
+
+        /* 테이블 */
+        table { width:100%; border-collapse:collapse; font-size:0.9rem; }
+        th, td { border:1px solid #ddd; padding:8px; text-align:center; }
+        th { background:#f3f4f6; }
+        tr:nth-child(even) { background:#fafafa; }
+        td a { color:#2563eb; cursor:pointer; text-decoration:underline; }
+
+        /* 페이지네이션 */
+        .pagination {
+            display:flex; justify-content:center; gap:4px; margin-top:12px; flex-wrap:wrap;
+        }
+        .pagination button {
+            border:1px solid #ddd; padding:4px 8px; border-radius:4px; background:white; cursor:pointer;
+        }
+        .pagination button.active, .pagination button:hover {
+            background:#2563eb; color:#fff;
+        }
+
+        /* 모달 */
+        .modal {
+            display:none; position:fixed; top:0; left:0; width:100%; height:100%;
+            background:rgba(0,0,0,0.45); justify-content:center; align-items:center; z-index:9999;
+        }
+        .modal-content {
+            background:#fff; padding:20px; border-radius:10px; width:90%; max-width:420px;
+            box-shadow:0 4px 12px rgba(0,0,0,0.25);
+        }
+        .modal-content h3 { margin-top:0; margin-bottom:10px; }
+        .modal-content input {
+            width:100%; padding:8px; border:1px solid #ccc; border-radius:6px; margin-bottom:10px;
+        }
+        .modal-actions { display:flex; justify-content:flex-end; gap:10px; }
+        .modal-actions button {
+            border:none; border-radius:6px; padding:8px 12px; color:#fff; cursor:pointer;
+        }
+        #saveBtn, #updateBtn { background:#2563eb; }
+        #saveBtn:hover, #updateBtn:hover { background:#1e40af; }
+        .closeBtn { background:#6b7280; }
+        .closeBtn:hover { background:#4b5563; }
+    </style>
+</head>
+
+<body>
+<th:block layout:fragment="content">
+
+    <div class="list-container">
+        <h2>📋 P01A05 서버 리스트</h2>
+
+        <!-- 🔍 검색 -->
+        <div class="toolbar">
+            <input type="text" id="searchInput" placeholder="검색어 입력" />
+            <button id="searchBtn">검색</button>
+        </div>
+
+        <!-- ⚙️ 액션버튼 -->
+        <div class="actions">
+            <button id="addBtn">등록</button>
+            <button id="deleteSelectedBtn">삭제</button>
+            <button id="excelBtn">엑셀 다운로드</button>
+        </div>
+
+        <!-- 📊 테이블 -->
+        <table>
+            <thead>
+                <tr>
+                    <th><input type="checkbox" id="checkAll"></th>
+                    <th>No</th>
+                    <th>제목</th>
+                    <th>담당자</th>
+                    <th>등록일</th>
+                </tr>
+            </thead>
+            <tbody id="tableBody"></tbody>
+        </table>
+
+        <!-- 🔢 페이지네이션 -->
+        <div id="pagination" class="pagination"></div>
+    </div>
+
+    <!-- 🧩 등록 모달 -->
+    <div id="modal" class="modal">
+        <div class="modal-content">
+            <h3>새 항목 등록</h3>
+            <input type="text" id="titleInput" placeholder="제목" />
+            <input type="text" id="ownerInput" placeholder="담당자" />
+            <div class="modal-actions">
+                <button id="saveBtn">저장</button>
+                <button class="closeBtn">닫기</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 🧩 상세 모달 -->
+    <div id="detailModal" class="modal">
+        <div class="modal-content">
+            <h3>상세 정보</h3>
+            <input type="hidden" id="detailId" />
+            <label>제목</label>
+            <input type="text" id="detailTitle" />
+            <label>담당자</label>
+            <input type="text" id="detailOwner" />
+            <label>등록일</label>
+            <input type="text" id="detailRegDate" readonly />
+            <div class="modal-actions">
+                <button id="updateBtn">수정</button>
+                <button class="closeBtn">닫기</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ✅ 공통 JS -->
+    <script src="/js/commonUnifiedList.js"></script>
+    <script>
+        document.addEventListener("DOMContentLoaded", () => {
+            initUnifiedList({
+                mode: "server",
+                apiUrl: "/api/p01a04",
+                tableBodySelector: "#tableBody",
+                paginationSelector: "#pagination",
+                searchInputSelector: "#searchInput",
+                searchBtnSelector: "#searchBtn",
+                addBtnSelector: "#addBtn",
+                modalId: "#modal",
+                closeBtnSelector: ".closeBtn",
+                saveBtnSelector: "#saveBtn",
+                checkAllSelector: "#checkAll",
+                deleteSelectedBtnSelector: "#deleteSelectedBtn",
+                detailModalId: "#detailModal",
+                detailFields: {
+                    id: "#detailId",
+                    title: "#detailTitle",
+                    owner: "#detailOwner",
+                    regDate: "#detailRegDate"
+                },
+                updateBtnSelector: "#updateBtn",
+                excelBtnSelector: "#excelBtn",
+                columns: [
+                    { key: "id" },
+                    { key: "title", isDetailLink: true },
+                    { key: "owner" },
+                    { key: "regDate" }
+                ]
+            });
+        });
+    </script>
+</th:block>
+</body>
+</html>

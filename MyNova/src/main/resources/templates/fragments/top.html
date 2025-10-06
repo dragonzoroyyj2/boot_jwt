@@ -1,0 +1,218 @@
+<!-- fragments/top.html -->
+<div th:fragment="topFragment">
+  <header class="top-bar">
+    <div class="left-section">
+      <!-- 🔘 사이드바 토글 버튼 -->
+      <button id="menuToggle" title="메뉴 열기/닫기">
+        <i class="fas fa-bars"></i>
+      </button>
+      <h1>MyNova</h1>
+    </div>
+
+    <div class="right-section">
+      <span id="sessionTimer" class="session-time">00:00</span>
+
+      <button id="refreshSessionBtn" class="icon-btn" title="세션 연장">
+        <i class="fas fa-rotate-right"></i>
+      </button>
+
+      <button id="logoutBtn" class="icon-btn" title="로그아웃">
+        <i class="fas fa-right-from-bracket"></i>
+      </button>
+    </div>
+  </header>
+
+  <style>
+    /* ===== 상단바 기본 ===== */
+    .top-bar {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 50px;
+      background: linear-gradient(90deg, #1e3a8a, #2563eb);
+      color: white;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 1rem;
+      z-index: 1000;
+      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.25);
+    }
+
+    /* 좌측 영역 */
+    .left-section {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding-left: 0.8rem;
+    }
+
+    .left-section h1 {
+      font-size: 1.1rem;
+      margin: 0;
+      font-weight: 600;
+      color: #fff;
+    }
+
+    /* 우측 영역 */
+    .right-section {
+      display: flex;
+      align-items: center;
+      gap: 15px; /* 버튼 간격 살짝 확대 */
+      padding-right: 2rem; /* ✅ 오른쪽 끝 여백을 넉넉히 */
+    }
+
+    /* 세션 타이머 */
+    .session-time {
+      display: inline-block;
+      font-size: 0.9rem;
+      font-weight: 600;
+      color: #fefce8;
+      text-align: center;
+      width: 70px;
+      background: rgba(255, 255, 255, 0.15);
+      border-radius: 6px;
+      padding: 4px 0;
+      letter-spacing: 0.5px;
+    }
+
+    /* 아이콘 버튼 */
+    .icon-btn {
+      background: rgba(255, 255, 255, 0.15);
+      border: none;
+      color: white;
+      font-size: 1rem;
+      cursor: pointer;
+      border-radius: 6px;
+      padding: 5px 8px;
+      transition: all 0.2s ease;
+    }
+
+    .icon-btn:hover {
+      background: rgba(255, 255, 255, 0.3);
+      color: #facc15;
+      transform: scale(1.1);
+    }
+
+    /* 메뉴 토글 버튼 */
+    #menuToggle {
+      background: none;
+      border: none;
+      color: white;
+      font-size: 1.2rem;
+      cursor: pointer;
+      transition: transform 0.2s ease;
+    }
+
+    #menuToggle:hover {
+      color: #facc15;
+      transform: scale(1.15);
+    }
+
+    /* 반응형 */
+    @media (max-width: 768px) {
+      .top-bar {
+        padding: 0 0.8rem;
+      }
+
+      .session-time {
+        width: 60px;
+        font-size: 0.8rem;
+        padding: 3px 0;
+      }
+
+      .icon-btn {
+        padding: 4px 6px;
+      }
+
+      .left-section h1 {
+        font-size: 1rem;
+      }
+
+      .right-section {
+        gap: 10px;
+        padding-right: 1rem; /* 모바일에서는 살짝 줄임 */
+      }
+    }
+  </style>
+
+  <script>
+    document.addEventListener("DOMContentLoaded", () => {
+      const timerEl = document.getElementById("sessionTimer");
+      const refreshBtn = document.getElementById("refreshSessionBtn");
+      const logoutBtn = document.getElementById("logoutBtn");
+      const toggleBtn = document.getElementById("menuToggle");
+
+      // ✅ 사이드바 토글
+      if (toggleBtn) {
+        toggleBtn.addEventListener("click", () => {
+          if (typeof window.toggleSidebar === "function") window.toggleSidebar();
+        });
+      }
+
+      // ✅ 세션 타이머
+      let sessionMillis = localStorage.getItem("sessionMillis");
+      let serverTime = localStorage.getItem("serverTime");
+
+      if (!sessionMillis || !serverTime) {
+        timerEl.textContent = "--:--";
+        return;
+      }
+
+      sessionMillis = parseInt(sessionMillis);
+      serverTime = parseInt(serverTime);
+      const drift = Date.now() - serverTime;
+
+      const updateTimer = () => {
+        const remaining = sessionMillis - (Date.now() - drift);
+        if (remaining <= 0) {
+          timerEl.textContent = "00:00";
+          timerEl.style.color = "#f87171";
+          localStorage.removeItem("token");
+          window.location.href = "/login";
+          return;
+        }
+
+        const min = Math.floor(remaining / 60000);
+        const sec = Math.floor((remaining % 60000) / 1000);
+        timerEl.textContent = `${String(min).padStart(2, "0")}:${String(sec).padStart(2, "0")}`;
+      };
+
+      updateTimer();
+      setInterval(updateTimer, 1000);
+
+      // ✅ 세션 연장
+      refreshBtn.addEventListener("click", async () => {
+        const token = localStorage.getItem("token");
+        if (!token) return alert("세션 정보가 없습니다.");
+
+        try {
+          const res = await fetch("/auth/refresh", {
+            method: "POST",
+            headers: { Authorization: "Bearer " + token },
+          });
+          if (res.ok) {
+            const data = await res.json();
+            localStorage.setItem("token", data.token);
+            localStorage.setItem("sessionMillis", data.sessionMillis);
+            localStorage.setItem("serverTime", data.serverTime);
+            alert("세션이 연장되었습니다 ✅");
+            location.reload();
+          } else {
+            alert("세션 연장 실패 ❌ 다시 로그인해주세요.");
+            window.location.href = "/login";
+          }
+        } catch {
+          alert("세션 연장 중 오류 발생 ❌");
+        }
+      });
+
+      // ✅ 로그아웃
+      logoutBtn.addEventListener("click", () => {
+        localStorage.clear();
+        window.location.href = "/login";
+      });
+    });
+  </script>
+</div>

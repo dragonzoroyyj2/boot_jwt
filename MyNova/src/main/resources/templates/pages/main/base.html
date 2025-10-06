@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html lang="ko"
+      xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{layout/default_layout}">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>MyNova 대시보드</title>
+</head>
+
+<body>
+  <div layout:fragment="content">
+    <main style="padding: 20px;">
+      <h2>📊 시스템 현황 대시보드</h2>
+      <p>환영합니다! 이곳에서 주요 지표와 상태를 확인할 수 있습니다.</p>
+    </main>
+  </div>
+
+  <th:block layout:fragment="pageScript">
+    <script>
+      console.log("✅ base.html script loaded successfully");
+    </script>
+  </th:block>
+</body>
+</html>
