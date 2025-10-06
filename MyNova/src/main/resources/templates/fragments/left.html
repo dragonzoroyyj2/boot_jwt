@@ -1,99 +1,146 @@
 <!-- fragments/left.html -->
-<div id="left" th:fragment="leftFragment">
-  <nav class="sidebar">
+<div th:fragment="leftFragment">
+  <!-- ✅ 사이드바를 먼저 선언 -->
+  <nav id="left" class="sidebar">
     <ul>
-      <li><a href="/pages/main/base"><i class="fas fa-home"></i> 홈</a></li>
-      <li><a href="/pages/p01/p01a04/p01a04List"><i class="fas fa-file-alt"></i> 리포트 관리</a></li>
-      <li><a href="#"><i class="fas fa-cog"></i> 설정</a></li>
+      <li><a href="/pages/main/base"><i class="fas fa-home"></i><span>홈</span></a></li>
+
+      <li class="has-submenu">
+        <a href="#"><i class="fas fa-file-alt"></i><span>리포트 관리</span></a>
+        <ul class="submenu">
+          <li><a href="/pages/p01/p01a04/p01a04List">리포트 목록</a></li>
+          <li><a href="#">리포트 통계</a></li>
+        </ul>
+      </li>
+
+      <li class="has-submenu">
+        <a href="#"><i class="fas fa-cog"></i><span>설정</span></a>
+        <ul class="submenu">
+          <li><a href="#">사용자 관리</a></li>
+          <li><a href="#">권한 설정</a></li>
+        </ul>
+      </li>
     </ul>
   </nav>
 
+  <!-- ✅ 오버레이는 뒤에 위치 -->
+  <div id="sidebarOverlay"></div>
+
   <style>
-    /* ===== 사이드바 기본 ===== */
-    #left {
+    /* ===== 사이드바 ===== */
+    .sidebar {
       position: fixed;
       top: 50px;
       left: 0;
-      width: 230px;
+      width: 240px;
       height: calc(100% - 50px);
-      background: #1e40af;
-      color: white;
+      background: #f3f4f6; /* 회색 배경 */
+      border-right: 1px solid #d1d5db;
+      color: #374151;
       overflow-y: auto;
-      transition: all 0.3s ease;
-      z-index: 900;
+      transform: translateX(0);
+      transition: transform 0.3s ease;
+      z-index: 2000; /* ✅ 메뉴가 항상 최상단 */
     }
 
-    #left.collapsed {
-      width: 60px;
+    .sidebar.closed {
+      transform: translateX(-240px);
     }
 
+    /* ===== 오버레이 (배경) ===== */
+    #sidebarOverlay {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0, 0, 0, 0.35);
+      z-index: 1999; /* ✅ 메뉴보다 아래 */
+      opacity: 0;
+      transition: opacity 0.3s ease;
+    }
+
+    #sidebarOverlay.active {
+      display: block;
+      opacity: 1;
+    }
+
+    /* ===== 메뉴 아이템 ===== */
     .sidebar ul {
       list-style: none;
-      padding: 0;
       margin: 0;
+      padding: 0;
     }
 
     .sidebar li {
-      padding: 12px 18px;
-      border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+      border-bottom: 1px solid #e5e7eb;
     }
 
     .sidebar li a {
-      color: #e2e8f0;
-      text-decoration: none;
       display: flex;
       align-items: center;
       gap: 10px;
-      transition: color 0.2s ease;
+      padding: 12px 18px;
+      text-decoration: none;
+      color: #374151;
       font-size: 0.95rem;
+      transition: background 0.2s, color 0.2s;
     }
 
     .sidebar li a:hover {
-      color: #60a5fa;
+      background: #e5e7eb;
+      color: #111827;
     }
 
-    /* 아이콘만 남는 축소 상태 */
-    #left.collapsed .sidebar li a span {
+    /* 하위 메뉴 */
+    .has-submenu > a::after {
+      content: "▾";
+      margin-left: auto;
+      font-size: 0.8rem;
+    }
+
+    .submenu {
       display: none;
+      background: #e5e7eb;
     }
 
-    /* 모바일 전용 */
-    @media (max-width: 768px) {
-      #left {
-        position: fixed;
-        transform: translateX(-100%);
-        width: 230px;
-        height: 100%;
-      }
-
-      #left.active {
-        transform: translateX(0);
-      }
+    .has-submenu.open .submenu {
+      display: block;
     }
   </style>
 
   <script>
-    // ✅ 전역 토글 함수 (top.html에서 호출됨)
-    window.toggleSidebar = function () {
-      const sidebar = document.getElementById("left");
-      if (!sidebar) return;
+    document.addEventListener("DOMContentLoaded", () => {
+      const sidebar = document.querySelector(".sidebar");
+      const overlay = document.getElementById("sidebarOverlay");
 
-      if (window.innerWidth <= 768) {
-        // 모바일 → 슬라이드 방식
-        sidebar.classList.toggle("active");
-      } else {
-        // PC → 축소/확대 방식
-        sidebar.classList.toggle("collapsed");
-      }
-    };
+      // ✅ 전역 함수 (top.html에서 호출)
+      window.toggleSidebar = function () {
+        const isClosed = sidebar.classList.contains("closed");
 
-    // ✅ 화면 크기 변경 시 자동 복원
-    window.addEventListener("resize", () => {
-      const sidebar = document.getElementById("left");
-      if (!sidebar) return;
-      if (window.innerWidth > 768) {
-        sidebar.classList.remove("active"); // 모바일용 제거
-      }
+        if (isClosed) {
+          sidebar.classList.remove("closed");
+          overlay.classList.add("active");
+        } else {
+          sidebar.classList.add("closed");
+          overlay.classList.remove("active");
+        }
+      };
+
+      // ✅ 배경 클릭 시 닫기
+      overlay.addEventListener("click", () => {
+        sidebar.classList.add("closed");
+        overlay.classList.remove("active");
+      });
+
+      // ✅ 하위 메뉴 토글
+      document.querySelectorAll(".has-submenu > a").forEach(link => {
+        link.addEventListener("click", e => {
+          e.preventDefault();
+          link.parentElement.classList.toggle("open");
+        });
+      });
     });
   </script>
 </div>

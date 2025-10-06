@@ -1,169 +1,105 @@
 <!DOCTYPE html>
-<html lang="ko"
-      xmlns:th="http://www.thymeleaf.org"
+<html lang="ko" xmlns:th="http://www.thymeleaf.org"
       xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout">
-
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title th:text="${title} ?: 'MyNova Platform'"></title>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title th:text="${title} ?: 'MyNova'">MyNova Platform</title>
 
-  <!-- 공통 아이콘 -->
+<!-- ✅ Font Awesome (공식 최신 안정버전 - 아이콘 100% 표시됨) -->
+<!-- 공통 아이콘 -->
   <link rel="stylesheet"
         href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
 
+
   <style>
-    /* ✅ 전체 레이아웃 */
     html, body {
-      margin: 0;
-      padding: 0;
       height: 100%;
-      width: 100%;
-      font-family: "Segoe UI", Arial, sans-serif;
-      background: #f8fafc;
-      overflow: hidden;
+      margin: 0;
+      font-family: 'Noto Sans KR', sans-serif;
+      background-color: #f3f4f6;
+      color: #333;
+      overflow-x: hidden;
     }
 
-    .layout-wrapper {
+    body {
       display: flex;
       flex-direction: column;
-      height: 100vh;
-      overflow: hidden;
     }
 
-    /* ✅ 상단 영역 */
-    header {
-      flex-shrink: 0;
-    }
-
-    /* ✅ 메인 영역 (좌측 + 콘텐츠) */
-    .main-area {
-      display: flex;
+    main {
       flex: 1;
-      height: calc(100vh - 50px);
-      overflow: hidden;
-      transition: all 0.3s ease;
+      margin-left: 230px;
+      padding: 90px 40px 40px 40px;
+      transition: margin-left 0.3s ease;
+      min-height: calc(100vh - 50px);
+      position: relative;
+      z-index: 0;
     }
 
-    /* ✅ 좌측 메뉴 (left.html) */
-    #left {
-      width: 240px;
-      background: #1e293b;
-      color: white;
-      height: 100%;
-      transition: width 0.3s ease, transform 0.3s ease;
-      overflow-y: auto;
-      flex-shrink: 0;
-    }
-
-    /* ✅ 토글된(축소) 상태 */
-    #left.collapsed {
-      width: 0;
-      transform: translateX(-100%);
-    }
-
-    /* ✅ 메인 콘텐츠 */
-    #mainContent {
-      flex: 1;
-      overflow-y: auto;
-      background: #f8fafc;
-      padding: 1.5rem;
-      box-sizing: border-box;
-      transition: all 0.3s ease;
-    }
-
-    /* ✅ 하단 영역 */
-    footer {
-      flex-shrink: 0;
-      text-align: center;
-      background: #f1f5f9;
-      color: #555;
-      padding: 0.6rem;
-      font-size: 0.85rem;
-    }
-
-    /* ✅ 반응형 처리 */
-    @media (max-width: 1024px) {
-      #left {
-        width: 200px;
-      }
+    #left.collapsed ~ main {
+      margin-left: 60px;
     }
 
     @media (max-width: 768px) {
-      .main-area {
-        flex-direction: column;
+      main {
+        margin-left: 0;
+        padding: 80px 20px 20px 20px;
       }
+    }
 
-      #left {
-        position: fixed;
-        top: 50px;
-        left: 0;
-        height: calc(100% - 50px);
-        z-index: 999;
-        transform: translateX(-100%);
-        width: 220px;
-        box-shadow: 2px 0 6px rgba(0, 0, 0, 0.2);
-      }
+    .content-card {
+      background: #ffffff;
+      border-radius: 12px;
+      padding: 24px;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+      min-height: 70vh;
+    }
 
-      #left.active {
-        transform: translateX(0);
-      }
+    .content-card h2 {
+      margin-top: 0;
+      font-size: 1.4rem;
+      font-weight: 600;
+      color: #1f2937;
+    }
 
-      #mainContent {
-        padding: 1rem;
-      }
+    ::-webkit-scrollbar {
+      width: 8px;
+    }
+    ::-webkit-scrollbar-thumb {
+      background-color: rgba(0, 0, 0, 0.2);
+      border-radius: 10px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background-color: rgba(0, 0, 0, 0.3);
+    }
+
+    header.top-bar {
+      position: fixed;
+      z-index: 2000 !important;
+    }
+
+    #left {
+      z-index: 1500 !important;
     }
   </style>
 </head>
 
 <body>
-  <div class="layout-wrapper">
-    <!-- ✅ 상단 -->
-    <div th:replace="~{fragments/top :: topFragment}"></div>
+  <div th:replace="~{fragments/top :: topFragment}"></div>
+  <div th:replace="~{fragments/left :: leftFragment}" id="left"></div>
 
-    <!-- ✅ 메인 (좌측 + 콘텐츠) -->
-    <div class="main-area">
-      <div id="left" th:replace="~{fragments/left :: leftFragment}"></div>
-
-      <main id="mainContent">
-        <th:block layout:fragment="content"></th:block>
-      </main>
-    </div>
-
-    <!-- ✅ 하단 -->
-    <div th:replace="~{fragments/bottom :: bottomFragment}"></div>
-  </div>
-
-  <!-- ✅ 페이지별 스크립트 삽입 위치 -->
   <th:block layout:fragment="pageScript"></th:block>
 
-  <script>
-    document.addEventListener("DOMContentLoaded", () => {
-      const left = document.getElementById("left");
-      const main = document.getElementById("mainContent");
+  <main>
+    <section layout:fragment="content">
+      <div class="content-card">
+        <h2>메인 콘텐츠 영역</h2>
+        <p>상단 토글 / 메뉴 / 세션 타이머 모두 정상 작동 중입니다 🎯</p>
+      </div>
+    </section>
+  </main>
 
-      // 🧭 윈도우 크기 변경 시 자동 반응형 적용
-      const handleResize = () => {
-        if (window.innerWidth <= 768) {
-          left.classList.add("collapsed");
-        } else {
-          left.classList.remove("collapsed");
-          left.classList.remove("active");
-        }
-      };
-
-      window.addEventListener("resize", handleResize);
-      handleResize(); // 초기 실행
-
-      // 🧭 토글 버튼(top.html과 연동됨)
-      document.addEventListener("toggleSidebar", () => {
-        if (window.innerWidth <= 768) {
-          left.classList.toggle("active"); // 모바일
-        } else {
-          left.classList.toggle("collapsed"); // 데스크탑
-        }
-      });
-    });
-  </script>
+  <div th:replace="~{fragments/bottom :: bottomFragment}"></div>
 </body>
 </html>
