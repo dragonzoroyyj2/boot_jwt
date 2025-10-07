@@ -1,9 +1,36 @@
 package com.mynova.app.controller;
 
-import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.*;
+import java.io.ByteArrayOutputStream;
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
+import java.time.LocalDate;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.stream.Collectors;
 
-import java.util.*;
+import org.apache.poi.ss.usermodel.Cell;
+import org.apache.poi.ss.usermodel.CellStyle;
+import org.apache.poi.ss.usermodel.FillPatternType;
+import org.apache.poi.ss.usermodel.Font;
+import org.apache.poi.ss.usermodel.HorizontalAlignment;
+import org.apache.poi.ss.usermodel.IndexedColors;
+import org.apache.poi.ss.usermodel.Row;
+import org.apache.poi.ss.usermodel.Sheet;
+import org.apache.poi.xssf.usermodel.XSSFWorkbook;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
 
 /**
  * 📋 P01A04ApiController - 공용 리스트 페이지용 REST API
@@ -65,7 +92,7 @@ public class P01A04ApiController {
     }
 
     // ============================================================
-    // 🔎 단건 조회 (상세 보기 - DB 조회한 것처럼)
+    // 🔎 단건 조회 (상세 보기)
     // ============================================================
     @GetMapping("/{id}")
     public ResponseEntity<?> getDetail(@PathVariable int id) {
@@ -126,24 +153,87 @@ public class P01A04ApiController {
         return Map.of("status", "deleted", "count", ids.size());
     }
 
-    // ============================================================
-    // 📊 엑셀 다운로드 (샘플 CSV 응답)
-    // ============================================================
-    @GetMapping("/excel")
-    public ResponseEntity<byte[]> downloadExcel(@RequestParam(required = false) String search) {
-        StringBuilder csv = new StringBuilder("id,title,owner,regDate\n");
-        mockList.forEach(item -> csv.append(
-                item.get("id") + "," +
-                item.get("title") + "," +
-                item.get("owner") + "," +
-                item.get("regDate") + "\n"
-        ));
+ // ============================================================
+ // 📊 엑셀(XLSX) 다운로드 (최종 안정버전)
+ // ------------------------------------------------------------
+ // ✅ 한글 파일명 완벽 대응 (모바일, iOS Safari, Edge, Chrome 등)
+ // ✅ JWT / CSRF 상관없이 fetch + blob 다운로드 호환
+ // ✅ Content-Disposition, Cache-Control 완비
+ // ============================================================
+ @GetMapping("/excel")
+ public ResponseEntity<byte[]> downloadExcel(@RequestParam(required = false) String search) {
+     try (XSSFWorkbook workbook = new XSSFWorkbook()) {
+         Sheet sheet = workbook.createSheet("리스트");
 
-        byte[] bytes = csv.toString().getBytes();
+         // ✅ 헤더 스타일
+         CellStyle headerStyle = workbook.createCellStyle();
+         Font headerFont = workbook.createFont();
+         headerFont.setBold(true);
+         headerStyle.setFont(headerFont);
+         headerStyle.setFillForegroundColor(IndexedColors.GREY_25_PERCENT.getIndex());
+         headerStyle.setFillPattern(FillPatternType.SOLID_FOREGROUND);
+         headerStyle.setAlignment(HorizontalAlignment.CENTER);
 
-        return ResponseEntity.ok()
-                .header("Content-Disposition", "attachment; filename=p01a04_list.csv")
-                .header("Content-Type", "text/csv; charset=UTF-8")
-                .body(bytes);
-    }
+         // ✅ 헤더 작성
+         String[] headers = {"ID", "제목", "작성자", "등록일"};
+         Row headerRow = sheet.createRow(0);
+         for (int i = 0; i < headers.length; i++) {
+             Cell cell = headerRow.createCell(i);
+             cell.setCellValue(headers[i]);
+             cell.setCellStyle(headerStyle);
+         }
+
+         // ✅ 검색 필터링 (mockList 가정)
+         List<Map<String, Object>> filtered = mockList.stream()
+                 .filter(item -> search == null || search.isBlank()
+                         || item.get("title").toString().contains(search)
+                         || item.get("owner").toString().contains(search))
+                 .collect(Collectors.toList());
+
+         // ✅ 데이터 행 작성
+         int rowIdx = 1;
+         for (Map<String, Object> item : filtered) {
+             Row row = sheet.createRow(rowIdx++);
+             row.createCell(0).setCellValue(item.get("id").toString());
+             row.createCell(1).setCellValue(item.get("title").toString());
+             row.createCell(2).setCellValue(item.get("owner").toString());
+             row.createCell(3).setCellValue(item.get("regDate").toString());
+         }
+
+         // ✅ 자동 열 너비 조정
+         for (int i = 0; i < headers.length; i++) sheet.autoSizeColumn(i);
+
+         // ✅ 워크북 → 바이트 변환
+         ByteArrayOutputStream out = new ByteArrayOutputStream();
+         workbook.write(out);
+         byte[] bytes = out.toByteArray();
+
+         // ✅ 파일명 인코딩 (UTF-8, 브라우저 호환)
+         String filename = "리스트_" + LocalDate.now() + ".xlsx";
+         String encodedFilename = URLEncoder.encode(filename, StandardCharsets.UTF_8).replaceAll("\\+", "%20");
+
+         // ⚠️ Content-Disposition 브라우저별 처리 (IE/Edge 대응)
+         String contentDisposition = "attachment; filename=\"" + filename + "\"";
+         contentDisposition += "; filename*=UTF-8''" + encodedFilename;
+
+         return ResponseEntity.ok()
+                 .header(HttpHeaders.CONTENT_DISPOSITION, contentDisposition)
+                 .header(HttpHeaders.CONTENT_TYPE, 
+                         "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet; charset=UTF-8")
+                 .header(HttpHeaders.CACHE_CONTROL, "no-cache, no-store, must-revalidate")
+                 .header(HttpHeaders.PRAGMA, "no-cache")
+                 .header(HttpHeaders.EXPIRES, "0")
+                 .body(bytes);
+
+     } catch (Exception e) {
+         e.printStackTrace();
+         return ResponseEntity.internalServerError()
+                 .header(HttpHeaders.CONTENT_TYPE, "text/plain; charset=UTF-8")
+                 .body(("엑셀 생성 중 오류 발생: " + e.getMessage()).getBytes(StandardCharsets.UTF_8));
+     }
+ }
+
+    
+
+    
 }

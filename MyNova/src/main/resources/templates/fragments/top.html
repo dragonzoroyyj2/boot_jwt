@@ -111,6 +111,11 @@
       const logoutBtn = document.getElementById("logoutBtn");
       const timerEl = document.getElementById("sessionTimer");
 
+      let sessionMillis = parseInt(localStorage.getItem("sessionMillis"));
+      let serverTime = parseInt(localStorage.getItem("serverTime"));
+      let drift = Date.now() - (serverTime || Date.now());
+      let timerInterval;
+
       // ✅ 사이드바 토글
       toggleBtn.addEventListener("click", () => {
         if (typeof window.toggleSidebar === "function") {
@@ -118,50 +123,64 @@
         }
       });
 
-      // ✅ 세션 타이머 표시
-      let sessionMillis = parseInt(localStorage.getItem("sessionMillis"));
-      let serverTime = parseInt(localStorage.getItem("serverTime"));
+      // ✅ 타이머 업데이트 함수
+      const updateTimer = () => {
+        const remaining = sessionMillis - (Date.now() - drift);
+        if (remaining <= 0) {
+          timerEl.textContent = "만료";
+          localStorage.clear();
+          window.location.href = "/login";
+          return;
+        }
+        const min = Math.floor(remaining / 60000);
+        const sec = Math.floor((remaining % 60000) / 1000);
+        timerEl.textContent = `${String(min).padStart(2, "0")}:${String(sec).padStart(2, "0")}`;
+      };
+
+      // ✅ 타이머 초기화
       if (!sessionMillis || !serverTime) {
         timerEl.textContent = "--:--";
       } else {
-        const drift = Date.now() - serverTime;
-        const updateTimer = () => {
-          const remaining = sessionMillis - (Date.now() - drift);
-          if (remaining <= 0) {
-            timerEl.textContent = "만료";
-            localStorage.clear();
-            window.location.href = "/login";
-            return;
-          }
-          const min = Math.floor(remaining / 60000);
-          const sec = Math.floor((remaining % 60000) / 1000);
-          timerEl.textContent = `${String(min).padStart(2, "0")}:${String(sec).padStart(2, "0")}`;
-        };
         updateTimer();
-        setInterval(updateTimer, 1000);
+        timerInterval = setInterval(updateTimer, 1000);
       }
 
       // ✅ 세션 연장
       refreshBtn.addEventListener("click", async () => {
         const token = localStorage.getItem("token");
         if (!token) return alert("세션 정보가 없습니다.");
+
         try {
           const res = await fetch("/auth/refresh", {
             method: "POST",
             headers: { Authorization: "Bearer " + token },
           });
+
           if (res.ok) {
             const data = await res.json();
+
+            // 새 값으로 덮어쓰기
             localStorage.setItem("token", data.token);
             localStorage.setItem("sessionMillis", data.sessionMillis);
             localStorage.setItem("serverTime", data.serverTime);
+
+            // 로컬 변수 갱신
+            sessionMillis = parseInt(data.sessionMillis);
+            serverTime = parseInt(data.serverTime);
+            drift = Date.now() - serverTime;
+
             alert("세션이 연장되었습니다 ✅");
-            location.reload();
+            // ✅ 새로고침 대신 타이머만 계속 갱신되게 유지
+            clearInterval(timerInterval);
+            updateTimer();
+            timerInterval = setInterval(updateTimer, 1000);
           } else {
             alert("세션 연장 실패 ❌ 다시 로그인해주세요.");
+            localStorage.clear();
             window.location.href = "/login";
           }
         } catch (err) {
+          console.error(err);
           alert("세션 연장 중 오류 발생 ❌");
         }
       });
