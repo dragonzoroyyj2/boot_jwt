@@ -107,6 +107,13 @@
             <artifactId>spring-boot-devtools</artifactId>
             <scope>runtime</scope>
         </dependency>
+        
+          <!-- ✅ Apache POI (Excel 생성용) -->
+		  <dependency>
+		    <groupId>org.apache.poi</groupId>
+		    <artifactId>poi-ooxml</artifactId>
+		    <version>5.2.5</version>
+		  </dependency>
 
         <!-- 🧪 Test -->
         <dependency>
